@@ -33,7 +33,9 @@ Browser HLS input is limited to **256 MiB**, with one merge job at a time. The n
 
 ## Installation
 
-This repository contains source code. **Prebuilt extensions, downloaded videos and machine-specific runtime files are not included.**
+**Install directly:** visit the [product page and installation guide](https://luffyliu.com/en/luffy-video-download-helper/), download the prebuilt ZIP, extract it and use **Load unpacked** in your browser’s Developer mode. Select the **extension** folder and keep it in a permanent location. No build is required. Choose the named `Luffy-Video-Download-Helper-version.zip` asset, not GitHub’s automatic Source code archives.
+
+Distribution currently uses manual ZIP installation, with no store install link. The extension’s upper-right arrow opens the product page. This repository contains source code; installation archives are available separately in [GitHub Releases](https://github.com/CarGod/luffy-video-download-helper/releases). Source-build instructions follow.
 
 ### 1. Build the extension
 
@@ -159,4 +161,4 @@ Downloaded files remain in `~/Downloads/Luffy/`. Review them before deleting the
 
 ## License
 
-Original project source code is released under the [MIT License](LICENSE). Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The FFmpeg WASM core includes GPL components. Distributing binaries containing that core requires addressing the corresponding-source and license obligations. This repository publishes project source and documentation, not those prebuilt binary packages.
+Original project source code is released under the [MIT License](LICENSE). Third-party components retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The FFmpeg WASM core includes GPL components. Distributing binaries containing that core requires addressing the corresponding-source and license obligations. The repository contains source and documentation; Releases distribute installation archives with source and build references in SOURCE.md.

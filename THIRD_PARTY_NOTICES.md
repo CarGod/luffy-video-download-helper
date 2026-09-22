@@ -3,7 +3,7 @@
 Luffy's application code is independently implemented. No DownloadHelper code, assets, branding, licence checks or proprietary package files are included.
 
 - @ffmpeg/ffmpeg 0.12.15: MIT. https://github.com/ffmpegwasm/ffmpeg.wasm
-- @ffmpeg/core 0.12.10: GPL-2.0-or-later per the published package. The WASM core includes FFmpeg and third-party codecs. Source and build recipes: https://github.com/ffmpegwasm/ffmpeg.wasm/tree/v0.12.10 ; https://github.com/FFmpeg/FFmpeg . Review corresponding-source obligations before distributing binaries publicly.
+- @ffmpeg/core 0.12.10: GPL-2.0-or-later per the published package. The WASM core includes FFmpeg and third-party codecs. Source and build recipes: https://github.com/ffmpegwasm/ffmpeg.wasm/tree/v12.15 ; https://github.com/FFmpeg/FFmpeg . Review corresponding-source obligations before distributing binaries publicly.
 - m3u8-parser 7.2.0 and @videojs/vhs-utils: Apache-2.0. https://github.com/videojs/m3u8-parser
 - global / min-document / dom-walk bundled parser dependencies: MIT. https://github.com/Raynos/global ; https://github.com/Raynos/min-document ; https://github.com/Raynos/dom-walk
 - esbuild: MIT (build-time only). https://github.com/evanw/esbuild

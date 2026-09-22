@@ -33,7 +33,9 @@
 
 ## 安装
 
-本仓库提供源码，**不包含预构建扩展、下载的视频或本机运行环境**。
+**直接安装：** 打开 [产品页与安装教程](https://luffyliu.com/luffy-video-download-helper/)，下载预构建 ZIP，解压后在浏览器开发者模式中「加载已解压的扩展程序」，选择其中的 **extension** 文件夹。无需自己编译，安装目录需要保留。GitHub 自动生成的 Source code 压缩包需要构建，请选择命名为 `Luffy-Video-Download-Helper-版本号.zip` 的安装包。
+
+当前采用压缩包手动安装，尚未提供商店入口。插件右上角 ↗ 打开产品页和更新教程。本仓库仍只保存源码，安装包在 [GitHub Releases](https://github.com/CarGod/luffy-video-download-helper/releases) 单独提供。下面是从源码构建的步骤。
 
 ### 1. 构建扩展
 
@@ -159,4 +161,4 @@ npm run pack
 
 ## 许可
 
-本项目自有源码采用 [MIT License](LICENSE)。第三方组件遵循各自许可，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。FFmpeg WASM 核心包含 GPL 组件；发布包含该核心的二进制包时，需要处理相应源码与许可义务。本仓库仅发布项目源码和文档，不发布这些预构建二进制包。
+本项目自有源码采用 [MIT License](LICENSE)。第三方组件遵循各自许可，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。FFmpeg WASM 核心包含 GPL 组件；发布包含该核心的二进制包时，需要处理相应源码与许可义务。仓库仅保存源码与文档；安装包通过 Releases 分发，源码与构建说明见包内 SOURCE.md。

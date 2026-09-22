@@ -29,7 +29,7 @@ function showTab(selected){
  $('.help').hidden=name!=='media';
 }
 $('#media-tab').onclick=()=>showTab('media');$('#jobs-tab').onclick=()=>showTab('jobs');$('#mcp-tab').onclick=()=>showTab('mcp');
-$('#expand').onclick=()=>chrome.tabs.create({url:chrome.runtime.getURL(`popup.html?manager=1&tab=${tabId||''}`)});
+$('#expand').onclick=()=>chrome.tabs.create({url:'https://luffyliu.com/luffy-video-download-helper/'});
 $('#scan').onclick=async()=>{try{if(!tabId)throw new Error('请先打开一个包含视频的网页');await rpc('scan',{tabId});notice('已扫描页面。如果仍没有视频，请播放视频或刷新原网页。');}catch(e){notice(e.message);}};
 $('#clear').onclick=async()=>{try{await rpc('clear');await refresh();}catch(e){notice(e.message);}};
 function nativeOptions(m,onCookiesChange){

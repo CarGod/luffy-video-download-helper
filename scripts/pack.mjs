@@ -9,6 +9,6 @@ await mkdir(`${root}/docs`);await cp('docs/VALIDATION.md',`${root}/docs/VALIDATI
 await cp('docs/images',`${root}/docs/images`,{recursive:true});
 await mkdir(`${root}/native`);
 for(const f of ['host.py','install.py','bridge.py','mcp_server.py'])await cp(`native/${f}`,`${root}/native/${f}`);
-for(const f of ['Install-Luffy-Helper.command','README.md','README.en.md','LICENSE','THIRD_PARTY_NOTICES.md'])await cp(f,`${root}/${f}`);
+for(const f of ['Install-Luffy-Helper.command','README.md','README.en.md','LICENSE','SOURCE.md','THIRD_PARTY_NOTICES.md'])await cp(f,`${root}/${f}`);
 await rm(`release/${name}.zip`,{force:true});execFileSync('/usr/bin/zip',['-q','-r',`${name}.zip`,name],{cwd:'release'});
 console.log(`Created release/${name}.zip`);
