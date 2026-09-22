@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Luffy Video Download Helper</title><link rel="stylesheet" href="app.css"></head>
+<body>
+<header><div class="brand"><img src="icons/128.png" alt="" width="38" height="38"><div><strong>LUFFY<span> / VIDEO</span></strong><p>Video Download Helper</p></div></div><div class="header-actions"><button id="scan" class="text-button" title="重新扫描页面视频">重新扫描</button><button id="expand" class="icon-button" title="打开独立管理页面" aria-label="打开独立管理页面">↗</button></div></header>
+<main>
+
+<nav aria-label="内容分类"><button class="tab active" id="media-tab" aria-selected="true">发现视频 <span id="media-count">0</span></button><button class="tab" id="jobs-tab" aria-selected="false">下载任务 <span id="job-count">0</span></button><button class="tab" id="mcp-tab" aria-selected="false">MCP 服务 <span id="mcp-indicator" class="mcp-indicator" data-state="off" role="status" aria-label="MCP 状态检查中" title="检查中"></span></button></nav>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<section id="media-panel" aria-label="发现的视频"><div id="media-list"></div></section>
+<section id="jobs-panel" aria-label="下载任务" hidden><div class="section-tools"><span>关闭弹窗，下载仍会继续</span><button id="clear" class="text-button">清理已结束任务</button></div><div id="job-list"></div></section>
+<section id="mcp-panel" class="mcp-panel" hidden aria-label="MCP 服务">
+  <div class="mcp-heading"><div><strong>MCP 服务</strong><span id="mcp-status" class="mcp-status" role="status">检查中…</span></div><button id="mcp-toggle" class="secondary" role="switch" aria-checked="false" aria-label="MCP 服务" disabled>开启服务</button></div>
+  <p class="mcp-description">让本地 Agent 发现并下载浏览器当前页的视频。</p>
+  <div class="mcp-actions"><button id="mcp-retry" class="text-button" hidden>重新连接</button></div>
+  <p id="mcp-error" class="error-text" role="alert" hidden></p>
+  <section class="mcp-install" aria-label="安装到 Agent">
+    <h2>安装到 Agent</h2>
+    <p>先开启服务，再复制安装说明，发给你要使用的本地 Agent。说明包含本机启动路径和配置，Agent 可以据此完成接入。</p>
+    <button id="mcp-copy" class="primary" disabled>复制安装说明，发给 Agent</button>
+    <textarea id="mcp-install-text" readonly hidden aria-label="发给 Agent 的安装说明"></textarea>
+    <p>安装后，按 Agent 提示重新连接 MCP，再让它查看当前页面的视频。</p>
+  </section>
+  <section class="mcp-config" aria-label="JSON 配置">
+    <div class="mcp-config-heading"><h2>JSON 配置</h2><button id="mcp-copy-json" class="text-button" disabled>复制 JSON</button></div>
+    <p>手动配置时，将下方内容合并到 Agent 的 MCP 设置。</p>
+    <textarea id="mcp-config-text" readonly spellcheck="false" aria-label="MCP JSON 配置">正在读取本机配置…</textarea>
+  </section>
+  <details class="mcp-help"><summary>助手未安装或连接失败？</summary><p>运行安装包中的 Install-Luffy-Helper.command，重启浏览器后再点击「重新连接」。关闭服务会停止新的 Agent 调用，已开始的下载继续运行。</p></details>
+</section>
+<details class="help"><summary>没有发现视频？</summary><p>先在网页里播放视频，再点击「重新扫描」。分段视频需要从网络请求中发现，必要时刷新原网页并重新播放。</p><p>支持 MP4 / WebM 等直链与 HLS 点播（含普通 AES-128 加密）。纯扩展不支持 DRM、直播和 DASH；DASH 与大文件可交给本机助手。浏览器内 HLS 单任务输入上限为 256 MB。</p></details>
+</main>
+<footer><span><span class="dot"></span> 本地处理 · 无账号 · 无会员</span><span id="app-version"></span></footer>
+<script type="module" src="ui.js"></script></body></html>
