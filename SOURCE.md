@@ -1,14 +1,17 @@
 # Source and build information
 
-Original extension and native helper source for this release:
-https://github.com/CarGod/luffy-video-download-helper/tree/v0.4.4
+Extension and native helper source for version 0.4.5 are in this Git checkout.
+Repository and commit history:
+https://github.com/CarGod/luffy-video-download-helper
 
-Download original project source:
-https://github.com/CarGod/luffy-video-download-helper/archive/refs/tags/v0.4.4.tar.gz
+Use the same Git commit when reproducing a build; version metadata alone does
+not imply that a release tag or binary has been published.
 
 Build the extension with Node.js 20+ using `npm ci && npm run build`.
 `package-lock.json` records exact JavaScript dependency versions and integrity values.
 
+The build applies a documented `canOwn` ownership patch to the pinned
+@ffmpeg/ffmpeg JavaScript worker so MEMFS can reuse transferred input buffers.
 The prebuilt @ffmpeg/core 0.12.10 WASM is used without modifications. Its upstream
 source, Docker build recipes and dependency versions are available at:
 https://github.com/ffmpegwasm/ffmpeg.wasm/tree/v12.15

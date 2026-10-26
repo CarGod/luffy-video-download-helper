@@ -135,6 +135,7 @@ async function reconcile(downloadId) {
     if(job.ruleId)await removeRule(job.ruleId);
     if(job.blob)await engine('release',{id:job.id}).catch(()=>{});
   }
+  return d.state;
 }
 chrome.downloads.onChanged.addListener(d=>{ready.then(()=>reconcile(d.id)).catch(()=>{});});
 async function saveBlob(m) {
@@ -246,7 +247,17 @@ async function handle(m,sender) {
     }
     case 'start':return startDownload(m);
     case 'cancel':return cancel(m.id);
-    case 'patch':return persistPatch(m.id,m.patch);
+    case 'patch':{
+      await persistPatch(m.id,m.patch);
+      const job=state.jobs.find(j=>j.id===m.id);
+      // Saving heartbeats recover missed download events and release messages,
+      // including after this service worker restarts.
+      if(m.patch?.heartbeat&&job?.downloadId){
+        const downloadState=await reconcile(job.downloadId);
+        if(downloadState==='in_progress')return 'saving';
+      }
+      return state.jobs.find(j=>j.id===m.id)?.status||'missing';
+    }
     case 'headerRule':return headerRule(m.url,m.source);
     case 'removeRule':return removeRule(m.id);
     case 'saveBlob':return saveBlob(m);

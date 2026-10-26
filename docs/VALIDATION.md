@@ -42,7 +42,7 @@ The optional `scripts/native-integration.mjs` and related platform checks access
 - Windows / Linux native installation and an actual Edge installation have not been validated.
 - No dedicated DASH acceptance sample, long-video stress test, or authenticated-cookie download test is included.
 - DRM, SAMPLE-AES and live streams are unsupported.
-- Browser HLS input is capped at 256 MiB. Native downloads require separately installed dependencies.
+- Video downloads have no configured file-size cap; browser HLS still depends on available memory and processing capacity. Native downloads require separately installed dependencies.
 
 ## Local artifacts and documentation screenshots
 
@@ -51,3 +51,23 @@ Generated logs, videos, paths and test screenshots live under ignored `artifacts
 `node scripts/docs-screenshots.mjs` captures the actual UI using synthetic video in a temporary profile. The MCP status and configuration are explicit demonstration values, with a generic `your-name` path. Only those reviewed images under `docs/images/` are intended for publication.
 
 中文：测试产物与真实本机路径不进入版本控制；文档截图使用合成媒体与示例 MCP 配置。上述通过项仅代表对应样例，不代表所有网站、登录状态或操作系统均已验收。
+
+## 0.4.5 resource lifecycle checks (2026-10-26)
+
+The offline HLS resource tests cover unbounded media responses beyond the former
+256 MiB threshold using virtual storage, exact response bytes, bounded playlist
+and key responses, cancellation, save backpressure, early completion, failure
+cleanup, and heartbeat recovery after lost release messages or background
+restarts. An active browser save is never released merely because time elapsed.
+The build checks and applies the pinned FFmpeg worker buffer-ownership patch.
+
+The matching implementation was also exercised in the installed Ego browser:
+two sequential downloads of a six-second synthetic fMP4 HLS video with separate
+AAC audio and initialization segments completed. Each output was 517,969 bytes;
+ffprobe reported H.264 320×180 plus AAC and a duration of 6.037 seconds. Full
+decoding passed, MCP remained available, and no FFmpeg worker remained after
+saving. These were local synthetic samples, not external website downloads.
+
+No GB-scale memory-peak benchmark or long-video stress test was performed. HLS
+merging still retains its inputs in browser memory rather than streaming them
+through disk, so these changes do not establish an unlimited resource capacity.

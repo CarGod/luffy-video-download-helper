@@ -2,9 +2,9 @@ import { parsePlaylist, selectVariant, decryptSegment } from './hls.js';
 import { filename, httpURL } from './media.js';
 import { FFmpeg } from './vendor/ffmpeg/index.js';
 
-const INPUT_LIMIT=256*1024*1024;
 const queue=[];
 const blobs=new Map();
+const saves=new Map();
 let active=null;
 async function rpc(type,data={}) {
   const r=await chrome.runtime.sendMessage({target:'background',type,...data});
@@ -12,7 +12,7 @@ async function rpc(type,data={}) {
 }
 const update=(id,patch)=>rpc('patch',{id,patch});
 function abortCheck(signal){if(signal.aborted)throw new DOMException('已取消','AbortError');}
-async function request(url,source,signal,{range=null,limit=INPUT_LIMIT}={}) {
+async function request(url,source,signal,{range=null,limit=Infinity}={}) {
   url=httpURL(url);
   for(let attempt=0;attempt<3;attempt++) {
     abortCheck(signal);
@@ -32,20 +32,31 @@ async function request(url,source,signal,{range=null,limit=INPUT_LIMIT}={}) {
         const actual=response.headers.get('content-range');
         if(response.status!==206 || !actual?.startsWith(`bytes ${range.offset}-${range.offset+range.length-1}/`))throw new Error('服务器未正确响应分片字节范围');
       }
-      if(Number(response.headers.get('content-length'))>limit)throw new Error('超过单任务 256 MB 输入上限，第一版暂不支持此大文件');
+      if(Number(response.headers.get('content-length'))>limit)throw new Error('服务器响应超过资源允许大小');
       const reader=response.body.getReader();const chunks=[];let size=0;
       try {
-        for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit){await reader.cancel();throw new Error('超过单任务 256 MB 输入上限，第一版暂不支持此大文件');}chunks.push(value);}
+        for(;;){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit){await reader.cancel();throw new Error('服务器响应超过资源允许大小');}chunks.push(value);}
       } finally {reader.releaseLock();}
       if(range && size!==range.length)throw new Error('分片数据不完整');
-      const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}
+      let bytes;
+      if(chunks.length===1){
+        const chunk=chunks[0];
+        // Reuse complete buffers, but do not retain an oversized pooled buffer.
+        bytes=chunk.byteOffset===0&&chunk.byteLength===chunk.buffer.byteLength?chunk:chunk.slice();
+      }else{
+        bytes=new Uint8Array(size);let offset=0;
+        for(let i=0;i<chunks.length;i++){
+          const chunk=chunks[i];bytes.set(chunk,offset);offset+=chunk.length;chunks[i]=null;
+        }
+      }
+      chunks.length=0;
       return {bytes,url:response.url};
     }catch(e){
       abortCheck(signal);
       if(attempt===2 || (e.retry!==true && !(e instanceof TypeError) && e.name!=='AbortError'))throw e;
       await new Promise((resolve,reject)=>{const stop=()=>{clearTimeout(timer);reject(new DOMException('已取消','AbortError'));};const timer=setTimeout(()=>{signal.removeEventListener('abort',stop);resolve();},(attempt+1)*600);signal.addEventListener('abort',stop,{once:true});});
     }finally{
-      clearTimeout(timeout);signal.removeEventListener('abort',abort);
+      clearTimeout(timeout);controller.abort();signal.removeEventListener('abort',abort);
       if(ruleId)await rpc('removeRule',{id:ruleId}).catch(()=>{});
     }
   }
@@ -65,7 +76,11 @@ async function run(item) {
   const controller=new AbortController();
   active={id:job.id,controller,ffmpeg:null};
   const signal=controller.signal;
-  const keepalive=setInterval(()=>update(job.id,{heartbeat:Date.now()}).catch(()=>{}),20000);
+  const keepalive=setInterval(()=>update(job.id,{heartbeat:Date.now()}).then(status=>{
+    // Recover lost completion/release messages after a background restart.
+    // Never expire a Blob while Chrome is still saving it.
+    if(saves.has(job.id)&&['complete','error','cancelled','missing'].includes(status))release(job.id);
+  }).catch(()=>{}),20000);
   let ffmpeg;
   try {
     await update(job.id,{status:'preparing',detail:'解析播放清单'});
@@ -88,7 +103,7 @@ async function run(item) {
     const keys=new Map();
     const getBytes=async part=>{
       abortCheck(signal);
-      const result=await request(part.url,source,signal,{range:part.range,limit:INPUT_LIMIT-totalBytes});
+      const result=await request(part.url,source,signal,{range:part.range});
       totalBytes+=result.bytes.length;
       if(!part.encryption)return result.bytes;
       const enc=part.encryption;
@@ -125,12 +140,20 @@ async function run(item) {
     const result=await ffmpeg.exec(args,120000);
     if(result!==0)throw new Error('音视频合并失败，可能是编码不兼容或处理超时。');
     abortCheck(signal);
-    const data=await ffmpeg.readFile('output.mp4');
+    let data=await ffmpeg.readFile('output.mp4');
     if(data.length<100)throw new Error('合并结果为空');
+    // readFile transfers the result. Drop all worker/MEMFS input buffers before
+    // allocating the output Blob and waiting for the browser to save it.
+    ffmpeg.terminate();ffmpeg=null;active.ffmpeg=null;
     const url=URL.createObjectURL(new Blob([data],{type:'video/mp4'}));
+    data=null;
     blobs.set(job.id,url);
+    // A small download can finish before the saveBlob RPC returns.
+    const saved=new Promise(resolve=>saves.set(job.id,resolve));
     const accepted=await rpc('saveBlob',{id:job.id,url,filename:filename(job.title)});
-    if(!accepted)release(job.id);
+    if(!accepted||signal.aborted)release(job.id);
+    // Avoid overlapping a large saved result with the next HLS input set.
+    await saved;
   }catch(e){
     release(job.id);
     await update(job.id,{status:signal.aborted?'cancelled':'error',error:signal.aborted?'':(e.message||'下载失败')}).catch(()=>{});
@@ -138,7 +161,10 @@ async function run(item) {
     clearInterval(keepalive);ffmpeg?.terminate();active=null;
   }
 }
-function release(id){const url=blobs.get(id);if(url)URL.revokeObjectURL(url);blobs.delete(id);}
+function release(id){
+  const url=blobs.get(id);if(url)URL.revokeObjectURL(url);blobs.delete(id);
+  const resolve=saves.get(id);saves.delete(id);resolve?.();
+}
 let pumping=false;
 async function pump(){if(pumping)return;pumping=true;try{while(queue.length)await run(queue.shift());}finally{pumping=false;}}
 async function handle(m) {
