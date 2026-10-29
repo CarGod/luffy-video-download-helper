@@ -12,6 +12,35 @@ npm run build
 
 The JavaScript suite covers media classification, filenames, HLS parsing and AES, media grouping, MCP page matching and operation selection. Python checks cover native command construction, format conversion and the Unix socket bridge.
 
+## Optional MCP output directory (local change)
+
+The Python suite additionally covers the optional `output_directory` schema,
+unchanged default/null calls, absolute paths and `~/`, missing directories,
+permission failures, disk/copy failures, nonregular sources, source changes,
+atomic collision handling across clients, interrupted publication, durable
+pending records, source cleanup warnings, and malformed destination records.
+Validation completed with 36 Python tests and the existing 18 JavaScript tests;
+the extension build also passed.
+
+Run the offline integration harness with a Python environment containing the
+MCP SDK and with FFmpeg available:
+
+```sh
+python3 scripts/mcp-output-integration.py
+```
+
+It uses the real SDK over stdio, an isolated temporary Unix socket fixture, and
+a one-second synthetic MP4. It checks the default saved path, an absolute Unicode
+destination, preservation of an existing conflicting file, numbered publication,
+SHA-256 byte equality, full video/audio decoding, and autonomous saving before
+any `get_jobs` query. Reviewable evidence is saved under ignored
+`artifacts/custom-output/`. This harness does not use a real browser connection,
+download a public video, install files, or restart the native host. Browser/HLS/
+native transport selection is unchanged; the new local save layer operates on
+their completed job paths. End-to-end browser integration was not rerun for this
+change. Unsupported hard-link filesystems are tested as explicit errors that
+preserve the source; no network-share filesystem acceptance test was performed.
+
 ## MCP end-to-end test
 
 Install the native helper first, then run:

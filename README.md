@@ -113,6 +113,24 @@ Tab 状态点：**绿色**正常运行、**灰色**未开启、**红色**异常�
 
 可以对 Agent 说：**“用 Luffy 查看当前页面的视频，下载我指定的那个，并告诉我保存路径。”**
 
+`download_video` 可选参数 `output_directory` 指定本机绝对目录，也支持 `~/`。不传或传 `null` 时，浏览器仍用浏览器默认下载位置，原生下载仍用 `~/Downloads/Luffy/`。传入空字符串、相对路径、文件路径或不可写目录会在提交下载前报错；缺失目录会自动创建。
+
+```json
+{
+  "connection": "从 list_connections 获取",
+  "tab_id": 123,
+  "page_url": "从 list_videos 原样获取",
+  "media_id": "从 list_videos 获取",
+  "output_directory": "/Users/your-name/mycloud/内容运营/素材库"
+}
+```
+
+浏览器 [`downloads.download`](https://developer.chrome.com/docs/extensions/reference/api/downloads#type-DownloadOptions) 只接受相对下载目录的文件名，不能任意直写绝对路径。本功能沿用原下载流程，下载完成后由本地 MCP 进程复制到指定目录，完整文件原子落盘并登记成功后再删除暂存源文件。同名文件自动编号为 `名称 (1).扩展名`，不会覆盖。此阶段需要额外磁盘空间，保持 MCP 进程运行并用 `get_jobs` 核对最终 `path`，只有其返回 `complete` 才代表目录保存完成。浏览器历史和扩展 UI 仍记录原暂存路径，最终路径以 MCP 结果为准。
+
+保存失败会返回 `error`、`source_path` 和可能的 `attempted_path`，保留暂存源文件，不自动重新下载；源文件清理失败会返回 `warning`。若提交成功但目录记录处理失败，返回任务 ID 和 `output_directory_error`，实际保存位置需用 `get_jobs` 核对。超时可能已经开始下载，目录登记未必完成，先查询任务，不要重复提交。目录记录保存在私有的 `~/.luffy-video-helper/run/output-directories/`；MCP 客户端重新连接时可继续同一浏览器连接的待保存任务，但保存发布阶段意外中断会明确报告结果不确定，需要核对文件。目标文件系统必须支持硬链接，才能原子发布且不覆盖；不支持时会明确报错并保留源文件。
+
+现有安装更新本功能只需同步 `native/mcp_server.py`、`native/output_directory.py` 到本机助手安装目录，并在当前任务结束后重新连接 MCP 客户端。无需重载浏览器扩展或重启原生下载助手；请勿在下载中重连 MCP。新安装由安装器自动包含新模块。
+
 ## 隐私与权限
 
 - 无遥测、账号系统或开发者上传接口。下载及预览会直接访问相应媒体来源；安装器会访问 PyPI。

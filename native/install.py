@@ -14,7 +14,7 @@ ENV=TARGET/'venv'
 if not (ENV/'bin/python').exists():
     subprocess.run([sys.executable,'-m','venv',str(ENV)],check=True)
 subprocess.run([str(ENV/'bin/python'),'-m','pip','install','--upgrade','yt-dlp[default]', 'mcp==1.30.0'],check=True)
-for name in ['host.py', 'bridge.py', 'mcp_server.py']:
+for name in ['host.py', 'bridge.py', 'mcp_server.py', 'output_directory.py']:
     shutil.copy2(ROOT/'native'/name, TARGET/name)
 node=shutil.which('node')
 if not node:

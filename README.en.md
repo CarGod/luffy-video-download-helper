@@ -113,6 +113,24 @@ When multiple videos are present, specify `media_id`. Downloads require the `tab
 
 Try asking your Agent: **“Use Luffy to list videos on the current page, download the one I choose, and tell me where it was saved.”**
 
+`download_video` accepts an optional `output_directory`: an absolute local directory (`~/` is supported). Omitted or `null` preserves browser defaults and the native helper's `~/Downloads/Luffy/` location. Empty/relative paths, files and unwritable directories fail before submission; missing directories are created.
+
+```json
+{
+  "connection": "from list_connections",
+  "tab_id": 123,
+  "page_url": "unchanged value from list_videos",
+  "media_id": "from list_videos",
+  "output_directory": "/Users/your-name/mycloud/media"
+}
+```
+
+Chrome's [`downloads.download`](https://developer.chrome.com/docs/extensions/reference/api/downloads#type-DownloadOptions) only accepts filenames relative to its download directory. Downloads therefore use the existing staging location; the local MCP process copies the completed file into the requested directory, publishes it atomically without overwriting, records success, and then removes the staging file. Conflicts become `name (1).ext`. This requires additional disk space. Keep MCP running and call `get_jobs`; only its `complete` result confirms the final `path`. Browser history and extension UI still refer to the original staging path.
+
+Save failures return `error`, `source_path` and possibly `attempted_path`, retaining the staging source and never redownloading automatically. Failed source cleanup returns a `warning`. If submission succeeded but destination registration handling failed, the result retains the job ID and includes `output_directory_error`; inspect `get_jobs` to determine the actual location. A submission timeout may already have started a download without registering the destination: inspect jobs before retrying. Private destination records under `~/.luffy-video-helper/run/output-directories/` allow reconnecting MCP clients to resume pending saves on the same browser connection. Interrupted publication is reported as uncertain and requires file inspection. The target filesystem must support hard links for atomic, non-overwriting publication; unsupported filesystems produce an explicit error and retain the source.
+
+To update an existing installation, copy `native/mcp_server.py` and `native/output_directory.py` into the helper installation directory, then reconnect the MCP client after active tasks finish. No extension reload or native download host restart is required. The installer includes the new module for fresh installations.
+
 ## Privacy and permissions
 
 - No telemetry, account system or developer upload endpoint. Downloads and previews contact the media source directly; installation contacts PyPI.
