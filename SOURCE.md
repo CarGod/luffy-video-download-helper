@@ -1,6 +1,6 @@
 # Source and build information
 
-Extension and native helper source for version 0.4.5 are in this Git checkout.
+Extension and native helper source for version 0.4.6 are in this Git checkout.
 Repository and commit history:
 https://github.com/CarGod/luffy-video-download-helper
 

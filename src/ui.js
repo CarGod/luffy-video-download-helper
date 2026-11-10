@@ -39,7 +39,7 @@ function nativeOptions(m,onCookiesChange){
  for(const [key,label,options] of fields.filter(([key])=>m.type!=='page'||key!=='quality')){const control=dropdown({label,options:options.map(([value,label])=>({value,label})),value:value[key],onChange:selected=>{value[key]=selected;if(key==='cookies')onCookiesChange?.();details.firstChild.textContent='下载设置 · '+(value.format==='mp4'?'MP4':value.format==='original'?'原始格式':'MKV');}});control.dataset.setting=key;details.append(control);}
  return details;
 }
-async function nativeDownload(m){const options=settings.get(m.id)||{format:'mp4',quality:'best',cookies:'none'};await rpc('nativeStart',{url:m.url,title:m.title,...options});showTab(true);}
+async function nativeDownload(m){const options=settings.get(m.id)||{format:'mp4',quality:'best',cookies:'none'};await rpc('nativeStart',{tabId,url:m.url,title:m.title,...options});showTab(true);}
 function renderPageVideo(m){
  const card=node('article','card page-video');card.dataset.mediaId=m.id;
  const preview=node('div','page-preview');const title=node('h2','',m.title);

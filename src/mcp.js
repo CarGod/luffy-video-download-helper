@@ -48,7 +48,7 @@ export function createMcpHandler({ chrome, rpc }) {
     // Re-check after asynchronous reads, just before starting a side effect.
     if ((await page(tab.id)).url !== m.pageUrl) throw Error('页面已切换，请重新调用 list_videos');
     const native = ['page','dash'].includes(selected.type);
-    const id = await rpc(native ? {type:'nativeStart',url:selected.url,title:selected.title,quality:m.quality||'best',format:m.format||'mp4',cookies:m.cookies||'none'}
+    const id = await rpc(native ? {type:'nativeStart',tabId:tab.id,url:selected.url,title:selected.title,quality:m.quality||'best',format:m.format||'mp4',cookies:m.cookies||'none'}
       : {type:'start',mediaId:selected.id,variantIndex:m.variantIndex??undefined,audioIndex:m.audioIndex??undefined});
     return {jobId:id, transport:native?'native':'browser', note:'已提交下载，请用 get_jobs 查询完成状态'};
   };

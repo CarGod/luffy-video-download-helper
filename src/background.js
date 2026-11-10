@@ -2,6 +2,7 @@ import { retryConnection } from './loading.js';
 import { createMcpHandler } from './mcp.js';
 import { classify, httpURL, filename, fileExtension, terminal } from './media.js';
 import { groupedMedia } from './media-groups.js';
+import { capturePageVideo, matchingXMedia, resolvePageDownload } from './page-media.js';
 const requestHeaders = new Map();
 let nativePort;
 let mcpEnabled=false;
@@ -173,6 +174,15 @@ async function cancel(id) {
   if(job.type==='hls')await engine('cancel',{id}).catch(()=>{});
   if(job.ruleId)await removeRule(job.ruleId);
 }
+async function pageMedia(tabId,url) {
+  const tab=await chrome.tabs.get(tabId);if(tab.incognito||tab.url!==url)return null;
+  const result=await chrome.scripting.executeScript({target:{tabId},func:capturePageVideo,args:[url]});
+  const info=result[0]?.result;if(!info)return null;
+  const media=matchingXMedia(info,groupedMedia(state.media[tabId]||[]));
+  // Preview/UI consumers must never receive captured authorization headers.
+  if(media){const {headers,...publicMedia}=media;return {...publicMedia,...info};}
+  return info;
+}
 function trustedPage(sender) {return sender.id===chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL('')) && !sender.tab?.incognito;}
 async function handle(m,sender) {
   await init;
@@ -195,28 +205,7 @@ async function handle(m,sender) {
       const source=Object.values(state.media).flat().find(x=>x.id===m.mediaId);if(!source)throw new Error('视频记录已失效');
       return engine('inspect',{source});
     }
-    case 'pageCover':{
-      const tab=await chrome.tabs.get(m.tabId);if(tab.incognito||tab.url!==m.url)return null;
-      const result=await chrome.scripting.executeScript({target:{tabId:m.tabId},func:(expected)=>{
-        if(location.href!==expected)return null;
-        const url=new URL(expected);let root=document;
-        if(['x.com','www.x.com','twitter.com','www.twitter.com'].includes(url.hostname)){
-          const status=url.pathname.match(/\/status\/(\d+)/)?.[1];
-          root=[...document.querySelectorAll('article')].find(article=>[...article.querySelectorAll('a[href]')].some(a=>a.querySelector('time')&&new URL(a.href).pathname.match(/\/status\/(\d+)/)?.[1]===status));
-          // Never use a recommended/reply video's poster for the current post.
-          if(!root)return null;
-        }
-        const video=root.querySelector('video');
-        const coverImage=[...root.querySelectorAll('img')].find(img=>/^https:\/\/pbs\.twimg\.com\/(?:ext_tw_video_thumb|amplify_video_thumb|tweet_video_thumb)\//.test(img.currentSrc||img.src));
-        const poster=video?.poster || coverImage?.currentSrc || coverImage?.src || (root===document?document.querySelector('meta[property="og:image"],meta[name="twitter:image"]')?.content:null);
-        return {poster:poster&&/^https?:/.test(poster)?poster:null,duration:Number.isFinite(video?.duration)?video.duration:null};
-      },args:[m.url]});
-      const info=result[0]?.result;if(!info)return null;
-      // Bind only a matching asset, never whichever media happened to be discovered first.
-      const asset=info.poster?.match(/pbs\.twimg\.com\/(ext_tw_video|amplify_video)_thumb\/(\d+)\//);
-      const media=asset&&groupedMedia(state.media[m.tabId]||[]).find(item=>{try{return new URL(item.url).hostname==='video.twimg.com'&&new URL(item.url).pathname.startsWith(`/${asset[1]}/${asset[2]}/`);}catch{return false;}});
-      return media?{...media,...info}:info;
-    }
+    case 'pageCover':return pageMedia(m.tabId,m.url);
     case 'nativePreview':return nativeRequest('preview',{url:httpURL(m.url),cookies:m.cookies});
     case 'helperStatus':return nativeRequest('status');
     case 'mcpStatus':{
@@ -241,7 +230,7 @@ async function handle(m,sender) {
       try{await nativeRequest('convert',{jobId:job.id,path:source.path});}catch(e){await persistPatch(job.id,{status:'error',error:e.message});throw e;}return job.id;
     }
     case 'nativeStart':{
-      const url=httpURL(m.url);const job={id:crypto.randomUUID(),title:m.title||new URL(url).hostname,type:'native',status:'queued',progress:0,bytes:0,createdAt:Date.now()};
+      const url=await resolvePageDownload({...m,url:httpURL(m.url)},{getTab:id=>chrome.tabs.get(id),getPageMedia:pageMedia});const job={id:crypto.randomUUID(),title:m.title||new URL(url).hostname,type:'native',status:'queued',progress:0,bytes:0,createdAt:Date.now()};
       await mutate(()=>{if(state.jobs.filter(j=>j.type==='native'&&!terminal(j.status)).length>=2)throw new Error('本机助手最多同时下载两个任务');state.jobs.unshift(job);state.jobs=state.jobs.filter((j,i)=>i<50||!terminal(j.status));});
       try{await nativeRequest('start',{jobId:job.id,url,quality:m.quality,cookies:m.cookies,format:m.format});}catch(e){await persistPatch(job.id,{status:'error',error:e.message});throw e;}return job.id;
     }

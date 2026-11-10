@@ -24,7 +24,13 @@ test('native page uses no cookies by default and jobs omit internal fields',asyn
  const {handler,tab,calls}=fixture([]);tab.url='https://www.youtube.com/watch?v=abc';
  await handler({action:'download',tabId:7,pageUrl:tab.url});
  assert.equal(calls.at(-1).type,'nativeStart');assert.equal(calls.at(-1).cookies,'none');
+ assert.equal(calls.at(-1).tabId,7);
  const {jobs}=await handler({action:'jobs'});assert.equal(jobs[0].headers,undefined);
  await assert.rejects(handler({action:'cancel',jobId:'absent'}));
  await assert.rejects(handler({action:'headerRule'}));
+});
+test('X page downloads carry tab context and preserve requested native options',async()=>{
+ const {handler,tab,calls}=fixture([]);tab.url='https://x.com/author/status/123';
+ await handler({action:'download',tabId:7,pageUrl:tab.url,quality:'720',format:'mkv',cookies:'none'});
+ assert.deepEqual(calls.at(-1),{type:'nativeStart',tabId:7,url:tab.url,title:'Test',quality:'720',format:'mkv',cookies:'none'});
 });

@@ -100,3 +100,23 @@ saving. These were local synthetic samples, not external website downloads.
 No GB-scale memory-peak benchmark or long-video stress test was performed. HLS
 merging still retains its inputs in browser memory rather than streaming them
 through disk, so these changes do not establish an unlimited resource capacity.
+
+## 0.4.6 X reused-video checks (2026-11-10)
+
+All 34 JavaScript tests and all 36 Python tests passed; the production extension
+build passed. Python checks used the native helper environment containing the
+MCP SDK, with no skipped tests. Resolver tests cover exact asset identity,
+current-article scoping, audio and initialization-fragment rejection, quality
+preservation, attribution fallback, stale/private tabs, navigation during
+resolution, and conservative handling of multiple or explicitly indexed videos.
+Direct MP4 captures are preview-only: they do not replace a post download, since
+generic extraction lacks the height metadata needed for numeric quality caps.
+
+The installed Ego extension was updated and the original failing X post was
+tested through its actual **current-video** download button at 720p, without
+importing browser cookies. The job completed and saved a 17,961,072-byte MP4.
+ffprobe reported H.264 1298×720, AAC audio, and 72.191667 seconds; full FFmpeg
+decoding completed without errors. MCP routing/options were covered by unit
+tests; an additional live MCP download and all other platform browser suites
+were not rerun. Test media, screenshots, raw post data, local paths and account
+details are not included in the source commit.

@@ -31,6 +31,10 @@ No account, subscription, or remote activation. Media processing runs on your co
 
 Video downloads have no configured file-size cap. Browser HLS processes one job at a time, waiting for the current file to finish saving before starting the next. Practical capacity depends on available memory and the browser environment. The native helper handles up to two concurrent jobs. Login, regional restrictions, expiring signatures and anti-automation measures can affect availability; compatibility with every website is not guaranteed.
 
+## 0.4.6 changes
+
+Fixes the current-video download route for reused videos on X. Downloads prefer the HLS master matching the visible video's exact asset ID while preserving quality and output-format choices, then use a video-attribution post when available. If neither is available, native post extraction remains the fallback. Both UI and MCP use the same resolver and recheck the page before downloading. Play the video first so its media can be discovered. Ambiguous multi-video posts and explicitly indexed later videos retain native extraction rather than guessing the first video.
+
 ## 0.4.5 changes
 
 Removes the HLS video-size cap, reduces duplicate response and merge-engine buffers, and releases the merge worker before saving. HLS processing waits for the current browser save to finish to avoid overlapping large results. Heartbeats reconcile actual browser download state to recover the queue after background restarts or missed completion messages.
